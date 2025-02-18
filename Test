@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CP72 Customs Declaration Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        form {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h2>CP72 Customs Declaration Form</h2>
+    <form id="cp72Form" onsubmit="submitForm(event)">
+        <label for="sender">Sender Name:</label>
+        <input type="text" id="sender" required>
+        
+        <label for="senderAddress">Sender Address:</label>
+        <textarea id="senderAddress" required></textarea>
+        
+        <label for="senderPhone">Sender Phone Number:</label>
+        <input type="text" id="senderPhone" required>
+        
+        <label for="recipient">Recipient Name:</label>
+        <input type="text" id="recipient" required>
+        
+        <label for="recipientPhone">Recipient Phone Number:</label>
+        <input type="text" id="recipientPhone" required>
+        
+        <label for="address">Recipient Address:</label>
+        <textarea id="address" required></textarea>
+        
+        <label for="description">Goods Description List:</label>
+        <table border="1" width="100%">
+            <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Weight (kg)</th>
+                <th>Origin</th>
+                <th>Value (AUD)</th>
+            </tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+            <tr><td><input type="text"></td><td><input type="text"></td><td><input type="number"></td><td><input type="number" step="0.01"></td><td><input type="text"></td><td><input type="number" step="0.01"></td></tr>
+        </table>
+        
+        <label for="weight">Weight (kg):</label>
+        <input type="number" id="weight" step="0.01" required oninput="calculateVolumetricWeight()">
+        
+        <label for="length">Length (cm):</label>
+        <input type="number" id="length" step="0.01" required oninput="calculateVolumetricWeight()">
+        
+        <label for="width">Width (cm):</label>
+        <input type="number" id="width" step="0.01" required oninput="calculateVolumetricWeight()">
+        
+        <label for="height">Height (cm):</label>
+        <input type="number" id="height" step="0.01" required oninput="calculateVolumetricWeight()">
+        
+        <label for="volumetricWeight">Volumetric Weight (kg):</label>
+        <input type="text" id="volumetricWeight" readonly>
+        
+        <label for="finalWeight">Final Chargeable Weight (kg):</label>
+        <input type="text" id="finalWeight" readonly>
+        
+        <label for="value">Declared Value (AUD):</label>
+        <input type="number" id="value" step="0.01" required>
+        
+        <label>
+            <input type="checkbox" id="terms" required> I agree to the <a href="https://www.monfreight.com.au/#kat-1bHvZKezbPW3ePE7" target="_blank">Terms and Conditions</a>
+        </label>
+        
+        <button type="button" onclick="generateCP72()">Generate CP72</button>
+            <label for="signature">Signature:</label>
+        <canvas id="signaturePad" width="400" height="150" style="border:1px solid #000;"></canvas>
+        <button type="button" onclick="clearSignature()">Clear</button>
+        <input type="hidden" id="signatureData">
+            <button type="submit">Submit</button>
+    </form>
+    
+    <script>
+        function calculateVolumetricWeight() {
+            const weight = parseFloat(document.getElementById('weight').value) || 0;
+            const length = parseFloat(document.getElementById('length').value) || 0;
+            const width = parseFloat(document.getElementById('width').value) || 0;
+            const height = parseFloat(document.getElementById('height').value) || 0;
+            
+            const volumetricWeight = (length * width * height) / 6000;
+            document.getElementById('volumetricWeight').value = volumetricWeight.toFixed(2);
+            
+            const finalWeight = Math.max(weight, volumetricWeight).toFixed(2);
+            document.getElementById('finalWeight').value = finalWeight;
+        }
+        
+        function generateCP72() {
+            if (!document.getElementById('terms').checked) {
+                alert("You must agree to the terms and conditions before proceeding.");
+                return;
+            }
+            
+            const sender = document.getElementById('sender').value;
+            const senderAddress = document.getElementById('senderAddress').value;
+            const senderPhone = document.getElementById('senderPhone').value;
+            const recipient = document.getElementById('recipient').value;
+            const recipientPhone = document.getElementById('recipientPhone').value;
+            const address = document.getElementById('address').value;
+            const description = document.getElementById('description').value;
+            const weight = parseFloat(document.getElementById('weight').value);
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const value = document.getElementById('value').value;
+            const volumetricWeight = document.getElementById('volumetricWeight').value;
+            const finalWeight = document.getElementById('finalWeight').value;
+            
+            if (!sender || !senderAddress || !senderPhone || !recipient || !recipientPhone || !address || !description || !weight || !length || !width || !height || !value) {
+                alert("Please fill in all fields.");
+                return;
+            }
+            
+            alert("CP72 Form Generated Successfully.");
+        }
+        
+        function showTerms() {
+            alert("Terms and Conditions: https://www.monfreight.com.au/#kat-1bHvZKezbPW3ePE7");
+        }
+            var canvas = document.getElementById('signaturePad');
+        var ctx = canvas.getContext('2d');
+        var drawing = false;
+        
+        canvas.addEventListener('mousedown', function(e) {
+            drawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        });
+        
+        canvas.addEventListener('mousemove', function(e) {
+            if (drawing) {
+                ctx.lineTo(e.offsetX, e.offsetY);
+                ctx.stroke();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', function() {
+            drawing = false;
+        });
+        
+        function clearSignature() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        function getSignatureData() {
+            document.getElementById('signatureData').value = canvas.toDataURL();
+        }
+        
+        document.getElementById('cp72Form').addEventListener('submit', function() {
+            getSignatureData();
+        });
+            function submitForm(event) {
+            event.preventDefault();
+            getSignatureData();
+            
+            const formData = new FormData(document.getElementById('cp72Form'));
+            
+            fetch('https://your-server-endpoint.com/generate-pdf', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'CP72_Form.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                return fetch('https://your-server-endpoint.com/send-email', {
+                    method: 'POST',
+                    body: formData
+                });
+            })
+            .then(response => response.json())
+            .then(data => alert('PDF generated and email sent successfully!'))
+            .catch(error => alert('Error: ' + error));
+        }
+    </script>
+</body>
+</html>
+
